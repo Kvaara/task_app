@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
+const bcrypt = require("bcrypt");
 
-const User = mongoose.model("User", {
+const userSchema = mongoose.Schema({
   name: {
     type: String,
   },
@@ -20,7 +21,7 @@ const User = mongoose.model("User", {
   password: {
     required: true,
     type: String,
-    minLength: 7,
+    minLength: 8,
     trim: true,
     validate(password) {
       if (password.toLowerCase().includes("password"))
@@ -28,5 +29,15 @@ const User = mongoose.model("User", {
     },
   },
 });
+
+userSchema.pre("save", async function (next) {
+  const user = this;
+  if (user.isModified("password")) {
+    user.password = await bcrypt.hash(user.password, 10);
+  }
+  next();
+});
+
+const User = mongoose.model("User", userSchema);
 
 module.exports = User;

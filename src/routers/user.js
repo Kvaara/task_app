@@ -58,10 +58,10 @@ router.patch("/users/:id", async (req, res) => {
   }
 
   try {
-    const user = await User.findByIdAndUpdate(id, body, {
-      new: true,
-      runValidators: true,
-    });
+    const user = await User.findById(id);
+    // Changing a object property dynamically needs bracket notation and not dot notation. The value between brackets can be any expression.
+    givenUpdates.forEach((update) => (user[update] = body[update]));
+    await user.save();
     return res.send(user);
   } catch (e) {
     return res.status(400).send(e);
