@@ -8,8 +8,8 @@ router.post("/users", async (req, res) => {
   const newUser = new User(req.body);
 
   try {
-    await newUser.save();
-    res.status(201).send(newUser);
+    const token = await newUser.generateAuthToken();
+    res.status(200).send({ user: newUser, token });
   } catch (e) {
     res.status(400).send(e);
   }
@@ -80,6 +80,18 @@ router.delete("/users/:id", async (req, res) => {
     return res.send(user);
   } catch (e) {
     return res.status(500).send(e);
+  }
+});
+
+router.post("/users/login", async (req, res) => {
+  const { body } = req;
+
+  try {
+    const user = await User.findByEmailAndPassword(body.email, body.password);
+    const token = await user.generateAuthToken();
+    return res.status(200).send({ user, token });
+  } catch (e) {
+    return res.status(401).send(e);
   }
 });
 
