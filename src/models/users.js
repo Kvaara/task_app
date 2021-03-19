@@ -40,6 +40,12 @@ const userSchema = mongoose.Schema({
   ],
 });
 
+userSchema.virtual("userTasks", {
+  ref: "Task",
+  localField: "_id",
+  foreignField: "user_id",
+});
+
 userSchema.pre("save", async function (next) {
   const user = this;
   if (user.isModified("password")) {

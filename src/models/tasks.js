@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
 
 const taskSchema = mongoose.Schema({
   description: {
@@ -10,6 +9,11 @@ const taskSchema = mongoose.Schema({
   completed: {
     type: Boolean,
     default: false,
+  },
+  user_id: {
+    type: mongoose.Schema.Types.ObjectID,
+    required: true,
+    ref: "User",
   },
 });
 

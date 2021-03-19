@@ -26,10 +26,8 @@ router.get("/users/me", auth, async (req, res) => {
 });
 
 // TODO: This endpoint doesn't send statuses to the client correctly if an user isn't found. Sometimes a task is found but its body is empty.
-router.patch("/users/:id", async (req, res) => {
-  const { id } = req.params;
+router.patch("/users/me/update", auth, async (req, res) => {
   const { body } = req;
-
   // Returns an array that includes the body object keys.
   const givenUpdates = Object.keys(body);
   // We make an array of all of the valid updates. You can't update something like the ObjectID or a property that doesn't exist.
@@ -44,7 +42,7 @@ router.patch("/users/:id", async (req, res) => {
   }
 
   try {
-    const user = await User.findById(id);
+    const { user } = req;
     // Changing a object property dynamically needs bracket notation and not dot notation. The value between brackets can be any expression.
     givenUpdates.forEach((update) => (user[update] = body[update]));
     await user.save();
@@ -54,16 +52,11 @@ router.patch("/users/:id", async (req, res) => {
   }
 });
 
-router.delete("/users/:id", async (req, res) => {
-  const { id } = req.params;
-
+router.delete("/users/me/delete", auth, async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(id);
+    await req.user.remove();
 
-    if (!user) {
-      return res.status(404).send({ error: "User not found." });
-    }
-    return res.send(user);
+    return res.send(req.user);
   } catch (e) {
     return res.status(500).send(e);
   }
