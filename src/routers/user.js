@@ -3,39 +3,25 @@ const express = require("express");
 const router = new express.Router();
 
 const User = require("../models/users.js");
+const auth = require("../middleware/auth.js");
 
 router.post("/users", async (req, res) => {
   const newUser = new User(req.body);
 
   try {
     const token = await newUser.generateAuthToken();
-    res.status(200).send({ user: newUser, token });
+    res.status(201).send({ user: newUser, token });
   } catch (e) {
     res.status(400).send(e);
   }
 });
 
-router.get("/users", async (req, res) => {
+router.get("/users/me", auth, async (req, res) => {
+  const { user } = req;
   try {
-    const users = await User.find();
-    res.send(users);
+    res.send(user);
   } catch (e) {
     res.status(500).send(e);
-  }
-});
-
-// TODO: This endpoint doesn't send statuses to the client correctly if an user isn't found. Sometimes an user is found but its body is empty.
-router.get("/users/:id", async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const user = await User.findById(id);
-    return res.status(302).send(user);
-  } catch (e) {
-    if (Object.keys(e.reason).length === 0) {
-      return res.status(404).send(e.reason);
-    }
-    return res.status(500).send(e);
   }
 });
 
@@ -87,12 +73,54 @@ router.post("/users/login", async (req, res) => {
   const { body } = req;
 
   try {
+    // Find user by the login email and password provided. Then generate an authorization token for the user's session.
     const user = await User.findByEmailAndPassword(body.email, body.password);
     const token = await user.generateAuthToken();
-    return res.status(200).send({ user, token });
+
+    // Send back status 200 with user's public profile and the token that's used in the current session
+    return res.send({ user, token });
   } catch (e) {
     return res.status(401).send(e);
   }
 });
 
+router.post("/users/signout", auth, async (req, res) => {
+  try {
+    // let { user } = req;
+    // const { token } = req.token;
+    req.user.tokens = req.user.tokens.filter(
+      (token) => token.token !== req.token
+    );
+    await req.user.save();
+    res.send();
+  } catch (e) {
+    res.status(500).send(e);
+  }
+});
+
+router.post("/users/signout/all", auth, async (req, res) => {
+  try {
+    req.user.tokens = req.user.tokens.filter(() => false);
+    await req.user.save();
+    res.send();
+  } catch (e) {
+    res.status(500).send(e);
+  }
+});
+
 module.exports = router;
+
+// TODO: This endpoint doesn't send statuses to the client correctly if an user isn't found. Sometimes an user is found but its body is empty.
+// router.get("/users/:id", async (req, res) => {
+//   const { id } = req.params;
+
+//   try {
+//     const user = await User.findById(id);
+//     return res.status(302).send(user);
+//   } catch (e) {
+//     if (Object.keys(e.reason).length === 0) {
+//       return res.status(404).send(e.reason);
+//     }
+//     return res.status(500).send(e);
+//   }
+// });
